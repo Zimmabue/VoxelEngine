@@ -44,9 +44,11 @@ public class World : MonoBehaviour
         chunksToDraw = new Queue<Chunk>();
     }
 
+    private object _locker = new object();
     public void AddChunkToDraw(Chunk chunk)
     {
-        chunksToDraw.Enqueue(chunk);
+        lock (_locker)
+            chunksToDraw.Enqueue(chunk);
     }
 
     // Update is called once per frame
@@ -121,8 +123,8 @@ public class World : MonoBehaviour
             }
         }
         
-        // this starts the chunks update
-        if (chunksToProcess.Count == 0)
+        // this starts the chunks update process
+        if (chunksToDraw.Count == 0)
             chunksToProcess.Dequeue().RecalculateTerrain();
 
         currentTargetChunkPosition = nextTargetChunkPosition;
@@ -142,6 +144,7 @@ public class World : MonoBehaviour
             chunk.tileSize = tileSize;
             chunk.size = chunkSize;
             chunk.transform.SetParent(transform);
+            chunk.Initialize();
         }
         
         chunk.data = surface;
@@ -166,7 +169,7 @@ public class World : MonoBehaviour
         Block surfaceBlock = surface.GetBlockBilinear(xCoord, zCoord);
 
         float heightOfTheSurfaceBlock = Mathf.Floor(surfaceBlock.density * worldHeight);
-
+        
         // hard-coded for now
         // below the surface
         if (position.y < heightOfTheSurfaceBlock)

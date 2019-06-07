@@ -6,7 +6,6 @@ using UnityEngine;
 
 [RequireComponent(typeof(MeshRenderer))]
 [RequireComponent(typeof(MeshFilter))]
-[RequireComponent(typeof(MeshCollider))]
 public class Chunk : MonoBehaviour
 {
 
@@ -29,7 +28,6 @@ public class Chunk : MonoBehaviour
 
     private MeshRenderer _renderer;
     private MeshFilter _meshFilter;
-    private MeshCollider _meshCollider;
 
     private Thread _thread = null;
     private object _locker = new object();
@@ -40,18 +38,22 @@ public class Chunk : MonoBehaviour
     private int[] triangles;
     private Vector2[] uvs;
     private Vector3[] normals;
-    
+    private Mesh mesh;
+
     public void Initialize()
     {
         vox = new Voxel(size, 1);
         _renderer = GetComponent<MeshRenderer>();
-        _meshCollider = GetComponent<MeshCollider>();
         _meshFilter = GetComponent<MeshFilter>();
     }
 
     public void RecalculateTerrain()
     {
+        //if (_thread.IsAlive)
+        //    _thread.Abort();
+
         _thread = new Thread(new ThreadStart(_recalculateTerrain));
+        _thread.Start();
     }
 
     private void _recalculateTerrain()
@@ -64,16 +66,16 @@ public class Chunk : MonoBehaviour
             {
                 for (int x = 0; x < sizePlusTwo.x; x++)
                 {
-                    int ix = x + position.x * size.x;
-                    int iz = z + position.y * size.z;
-                    int iy = y * size.y;
-
-                    //double xCoord = (ix - 1) / (double)tileSize;
-                    //double zCoord = (iz - 1) / (double)tileSize;
-                    Block d = World.instance.GetVoxel(new Vector3Int(ix - 1, iy, iz - 1));//surface.GetBlockBilinear(xCoord, zCoord);
-                    //float fh = Mathf.Floor(d.density * tileSize);
-
-                    vol[x, y, z] = d;//iy > fh ? new Block(BlockType.Air, 0) : new Block(d.type, 1);
+                    Vector3Int voxelPositionInWorldSpace = new Vector3Int
+                        (
+                            x + position.x * size.x - 1,
+                            y,
+                            z + position.y * size.z - 1
+                        );
+                    
+                    Block d = World.instance.GetVoxel(voxelPositionInWorldSpace);
+                    
+                    vol[x, y, z] = d;
                 }
             }
         }
@@ -83,13 +85,13 @@ public class Chunk : MonoBehaviour
         triangles = vox.triangles.ToArray();
         normals = vox.normals.ToArray();
         uvs = vox.uvs.ToArray();
-
+        
         World.instance.AddChunkToDraw(this);
     }
 
     public void UpdateMesh()
     {
-        Mesh mesh = new Mesh
+        mesh = new Mesh
         {
             vertices = vertices,
             triangles = triangles,

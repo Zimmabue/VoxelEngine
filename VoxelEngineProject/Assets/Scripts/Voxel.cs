@@ -46,12 +46,12 @@ public class Voxel {
         triangles.Clear();
         uvs.Clear();
         normals.Clear();
-
+        
         for (int y = 1; y < size.y + 2 - 1; y++)
         {
             for (int z = 1; z < size.z + 2 - 1; z++)
             {
-                for (int x = 1; x < size.z + 2 - 1; x++)
+                for (int x = 1; x < size.x + 2 - 1; x++)
                 {
                     if (volume[x, y, z].density == 0)
                         continue;
@@ -81,13 +81,13 @@ public class Voxel {
 
                     if (faces == 0)
                         continue;
-
+                    
                     Cube(volume[x, y, z].type, faces, new Vector3(x, y, z), scale * 0.5f);
 
                 }
             }
         }
-
+        
     }
 
 
