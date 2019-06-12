@@ -54,6 +54,9 @@ public class World : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (surface == null)
+            return;
+
         //--------------------------------------------------
         //--------PROCESSING-AND-SHOWING-CHUNKS-------------
         //--------------------------------------------------
@@ -81,22 +84,21 @@ public class World : MonoBehaviour
             currentCountDownUpdate = timerUpdate;
             return;
         }
-
-        //
+        
         currentCountDownUpdate -= Time.deltaTime;
         if (currentCountDownUpdate > 0)
             return;
         currentCountDownUpdate = timerUpdate;
-
+        
         //--------------------------------------------------
         //--------UPDATE-NOT-VISIBLE-CHUNKS-----------------
         //--------------------------------------------------
-        for (int i = 0; i < chunks.Count; i++)
+        for (int i = chunks.Count - 1; i >= 0; i--)
         {
             var c = chunks[i];
             if (IsInBound(nextTargetChunkPosition, viewDistance, c.position))
                 continue;
-
+            
             c.SetRendererActive(false);
             chunks.RemoveAt(i);
             notVisibleChunks.Push(c);
@@ -115,11 +117,11 @@ public class World : MonoBehaviour
                         z - viewDistance
                     ) + nextTargetChunkPosition;
 
-                if (IsInBound(nextTargetChunkPosition, viewDistance, positionToAnalize) &&
-                    IsInBound(currentTargetChunkPosition, viewDistance, positionToAnalize))
+                if (IsInBound(currentTargetChunkPosition, viewDistance, positionToAnalize))
                     continue;
 
-                SetChunk(positionToAnalize);
+                if (IsInBound(nextTargetChunkPosition, viewDistance, positionToAnalize))
+                    SetChunk(positionToAnalize);
             }
         }
         
@@ -150,15 +152,15 @@ public class World : MonoBehaviour
         chunk.data = surface;
         chunk.position = position;
         chunks.Add(chunk);
-
+        
         chunksToProcess.Enqueue(chunk);
     }
 
     private bool IsInBound(Vector2Int center, int size, Vector2Int contain)
     {
         return
-            contain.x > center.x - size && contain.x < center.x + size &&
-            contain.y > center.y - size && contain.y < center.y + size;
+            contain.x >= center.x - size && contain.x < center.x + size &&
+            contain.y >= center.y - size && contain.y < center.y + size;
     }
 
     public Block GetVoxel(Vector3Int position)
